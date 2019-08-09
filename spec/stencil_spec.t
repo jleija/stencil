@@ -4,7 +4,7 @@ local m = require("match")
 describe("stencil", function()
     local stencil = require("stencil")
 
-    it("how to compare quotes", function()
+    it("how to compare quotes", function()  -- {{{
         local x = quote print("hello") end
         local y = quote print("hello") end
         x.tree.offset = nil
@@ -22,7 +22,7 @@ describe("stencil", function()
         x.tree.statements[1].arguments[1].linenumber = nil
         y.tree.statements[1].arguments[1].linenumber = nil
         assert.is.same( x.tree.statements[1], y.tree.statements[1])
-    end)
+    end)    -- }}}
     it("copies input element with empty template", function()
         local templates = {}
         local apply_stencil = stencil(templates)
@@ -61,6 +61,40 @@ describe("stencil", function()
                 { { K.c }, function(capture)
                                 return { es = apply_stencil(capture.c) } 
                            end }
+            },
+            {
+                name = "bottom",
+                { 1, "uno" },
+                { 2, "dos" },
+                { 3, "tres"}
+            }
+        }
+        apply_stencil = stencil(templates)
+        local doc = { a = 1, b = { c = 3 } }
+        assert.is.same({ C = { es = "tres" } }, apply_stencil(doc))
+    end)
+    it("applies stencil recursively via var transforms", function()
+        local N = m.namespace()
+        local K = N.keys
+        local V = N.vars
+        local T = N.transforms
+
+        local apply_stencil
+
+        -- TODO: CONTINUE HERE: get rid of the proxy
+        --       - maybe get rid of the whole circular reference 
+        local function apply_stencil_proxy(x)
+            return apply_stencil(x)
+        end
+
+        local templates = {
+            {
+                name = "top",
+                { { K.a, K.b }, { C = T.b(apply_stencil_proxy) } }
+            },
+            {
+                name = "mid",
+                { { K.c }, { es = T.c(apply_stencil_proxy) } }
             },
             {
                 name = "bottom",
