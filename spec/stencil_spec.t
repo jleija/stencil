@@ -2,7 +2,9 @@ local mm = require'mm'
 local m = require("match")
 
 describe("stencil", function()
-    local stencil = require("stencil")
+    before_each(function()
+        stencil = require("stencil")()
+    end)
 
     it("how to compare quotes", function()  -- {{{
         local x = quote print("hello") end
@@ -25,7 +27,7 @@ describe("stencil", function()
     end)    -- }}}
     it("copies input element with empty template", function()
         local templates = {}
-        local apply_stencil = stencil(templates)
+        local apply_stencil = stencil.make(templates)
         local doc = { a = 1, b = 2}
         assert.is.same(doc, apply_stencil(doc))
     end)
@@ -39,27 +41,26 @@ describe("stencil", function()
                 { { K.a }, V.a }
             }
         }
-        local apply_stencil = stencil(templates)
+        stencil.make(templates)
         local doc = { a = 1, b = 2}
-        assert.is.equal(1, apply_stencil(doc))
+        assert.is.equal(1, stencil.apply(doc))
     end)
     it("applies stencil recursively", function()
         local N = m.namespace()
         local K = N.keys
         local V = N.vars
 
-        local apply_stencil
         local templates = {
             {
                 name = "top",
                 { { K.a, K.b }, function(capture) 
-                                    return { C = apply_stencil(capture.b) } 
+                                    return { C = stencil.apply(capture.b) } 
                                 end }
             },
             {
                 name = "mid",
                 { { K.c }, function(capture)
-                                return { es = apply_stencil(capture.c) } 
+                                return { es = stencil.apply(capture.c) } 
                            end }
             },
             {
@@ -69,7 +70,7 @@ describe("stencil", function()
                 { 3, "tres"}
             }
         }
-        apply_stencil = stencil(templates)
+        apply_stencil = stencil.make(templates)
         local doc = { a = 1, b = { c = 3 } }
         assert.is.same({ C = { es = "tres" } }, apply_stencil(doc))
     end)
@@ -79,22 +80,14 @@ describe("stencil", function()
         local V = N.vars
         local T = N.transforms
 
-        local apply_stencil
-
-        -- TODO: CONTINUE HERE: get rid of the proxy
-        --       - maybe get rid of the whole circular reference 
-        local function apply_stencil_proxy(x)
-            return apply_stencil(x)
-        end
-
         local templates = {
             {
                 name = "top",
-                { { K.a, K.b }, { C = T.b(apply_stencil_proxy) } }
+                { { K.a, K.b }, { C = T.b(stencil.apply) } }
             },
             {
                 name = "mid",
-                { { K.c }, { es = T.c(apply_stencil_proxy) } }
+                { { K.c }, { es = T.c(stencil.apply) } }
             },
             {
                 name = "bottom",
@@ -103,8 +96,16 @@ describe("stencil", function()
                 { 3, "tres"}
             }
         }
-        apply_stencil = stencil(templates)
+        stencil.make(templates)
         local doc = { a = 1, b = { c = 3 } }
-        assert.is.same({ C = { es = "tres" } }, apply_stencil(doc))
+        assert.is.same({ C = { es = "tres" } }, stencil.apply(doc))
+    end)
+    it("fails when trying to apply stencil without having call make with templates", function()
+        assert.is.error(function() stencil.apply({}) end, 
+            "Stencil application without templates. Invoke make_stencil with templates before making this call")
+    end)
+    it("fails when trying to make stencil twice", function()
+        stencil.make({})
+        assert.is.error(function() stencil.make({}) end, "Shouldn't invoke stencil.make() twice on the same instance")
     end)
 end)

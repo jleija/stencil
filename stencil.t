@@ -1,48 +1,69 @@
 local m = require("match")
 
-local function stencil(templates)
-
-    local templates_by_name = {}
-    local templates_by_index = {}
-    for i, t in ipairs(templates) do
-        local match_fn
-        if type(t) == "table" then
-            if t[1] and t.name then         -- assume a match table
-                match_fn = m.matcher(t)
-                templates_by_name[t.name] = match_fn
-            end
-        end
-        match_fn = match_fn or function(x) return x == t and t or nil end
-        table.insert(templates_by_index, match_fn)
+local function new_stencil()
+    local uninitialized_apply_stencil_fn = function()
+        error("Stencil application without templates. Invoke make_stencil with templates before making this call")
     end
 
+    local apply_stencil = uninitialized_apply_stencil_fn
 
-    local current_element
+    local function make_stencil(templates)
+        -- this is not technically an error because everything gets reset
+        -- safetly but it might indicate a misused of the library
+        assert(apply_stencil == uninitialized_apply_stencil_fn,
+                "Shouldn't invoke stencil.make() twice on the same instance")
 
-    local function apply_stencil(element)
-        local tmp = current_element
-        current_element = element
-        local res
-        local t = templates_by_name[element] 
+        local templates_by_name = {}
+        local templates_by_index = {}
+        for i, t in ipairs(templates) do
+            local match_fn
+            if type(t) == "table" then
+                if t[1] and t.name then         -- assume a match table
+                    match_fn = m.matcher(t)
+                    templates_by_name[t.name] = match_fn
+                end
+            end
+            match_fn = match_fn or function(x) return x == t and t or nil end
+            table.insert(templates_by_index, match_fn)
+        end
 
-        if t then
-            res = t(element)
-        else
-            for i, t in ipairs(templates_by_index) do
+
+        local current_element
+
+        apply_stencil = function(element)
+            local tmp = current_element
+            current_element = element
+            local res
+            local t = templates_by_name[element] 
+
+            if t then
                 res = t(element)
-                if res ~= nil then break end
+            else
+                for i, t in ipairs(templates_by_index) do
+                    res = t(element)
+                    if res ~= nil then break end
+                end
             end
+
+            if res == nil then
+                res = element
+            end
+
+            current_element = tmp
+            return res
         end
 
-        if res == nil then
-            res = element
-        end
-
-        current_element = tmp
-        return res
+        return apply_stencil
     end
 
-    return apply_stencil
+    local function apply_stencil_proxy(element)
+        return apply_stencil(element)
+    end
+
+    return {
+        make = make_stencil,
+        apply = apply_stencil_proxy
+    }
 end
 
-return stencil
+return new_stencil
