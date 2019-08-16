@@ -10,19 +10,27 @@ local function render(template, vars)
 end
 
 
-local function new_stencil(aux)
+local function new_stencil(aux, aliases)
     aux = aux or {}
+    aliases = aliases or {}
+    aliases.aux = aliases.aux or "aux"
+    aliases.V = aliases.V or "V"
+    aliases.apply_stencil = aliases.apply_stencil or "apply_stencil"
+
     local rules = {}
 
     local apply
 
 	local function template_env(element, captures, aux)
-        assert(not element.aux, "aux will be used to supporting functions")
-        assert(not element.V, "V will be used for pattern-captured variables")
-        assert(not element.apply_stencil, "apply_stencil will be used for recursive stencil calls")
-        element.aux = aux
-        element.V = captures
-        element.apply_stencil = apply
+        assert(not element[aliases.aux], "Key '" .. aliases.aux 
+                .. "' clashes with alias given to auxiliary functions \"namespace\". Use aliases in constructor to override given names.")
+        assert(not element[aliases.V], "Key '" .. aliases.V 
+                .. "' clashes with alias given to pattern-captured variables. Use aliases in constructor to override given names.")
+        assert(not element[aliases.apply_stencil], "Key '" .. aliases.apply_stencil
+                .. "' clashes with alias used for recursive stencil calls. Use aliases in constructor to override given names.")
+        element[aliases.aux] = aux       -- CONTINUE HERE: continue using the aliases
+        element[aliases.V] = captures
+        element[aliases.apply_stencil] = apply
         return element
 	end
 
@@ -36,7 +44,6 @@ local function new_stencil(aux)
 
     local function rule(r)
         local normal_rule = normalize_rule(r)
-        assert(normal_rule, "Could not build rule " .. #rules + 1)
         table.insert(rules, normal_rule)
         return normal_rule
     end

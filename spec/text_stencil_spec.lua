@@ -55,4 +55,29 @@ describe("text_stencil", function()
         local doc = { b = { a = 1 } }
         assert.is.equal("B:[A:2]", stencil.apply(doc))
     end)
+    it("supports customization of context/environment to avoid name clashes", function()
+        local aliases = {
+            aux = "utils",
+            V = "captures",
+            apply_stencil = "apply_templates"
+        }
+        local stencil = require("text_stencil")(aux, aliases)
+        stencil.rule{
+           { K.a }, "A:{{= utils.double(captures.a) }}"
+        }
+        stencil.rule{
+           { K.b }, "B:[{{= apply_templates(captures.b) }}]"
+        }
+        local doc = { b = { a = 1 } }
+        assert.is.equal("B:[A:2]", stencil.apply(doc))
+    end)
+    it("errors out when an element key clashes with one of the internal values", function()
+        local stencil = require("text_stencil")()
+        stencil.rule{
+           { aux = m.value }, "A:{{= a }}"
+        }
+        local doc = { aux = 1 }
+        assert.is.error(function() stencil.apply(doc) end, 
+            [[Key 'aux' clashes with alias given to auxiliary functions "namespace". Use aliases in constructor to override given names.]])
+    end)
 end)
