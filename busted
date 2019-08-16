@@ -6,4 +6,4 @@ export LUA_CPATH="/usr/local/lib/lua/5.1/?.so;/usr/lib/x86_64-linux-gnu/lua/5.1/
 export TERRA_PATH=`echo "$LUA_PATH" | sed 's/.lua/.t/g'`
 export TERRA_PATH="$TERRA_PATH;./src/?.t"
 
-busted --lua=terra --loaders=terra $@
+busted --lua=terra --loaders=terra,lua $@
