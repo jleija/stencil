@@ -22,16 +22,23 @@ local function new_stencil(aux, aliases)
     local apply
 
 	local function template_env(element, captures, aux)
-        assert(not element[aliases.aux], "Key '" .. aliases.aux 
-                .. "' clashes with alias given to auxiliary functions \"namespace\". Use aliases in constructor to override given names.")
-        assert(not element[aliases.V], "Key '" .. aliases.V 
-                .. "' clashes with alias given to pattern-captured variables. Use aliases in constructor to override given names.")
-        assert(not element[aliases.apply_stencil], "Key '" .. aliases.apply_stencil
-                .. "' clashes with alias used for recursive stencil calls. Use aliases in constructor to override given names.")
-        element[aliases.aux] = aux       -- CONTINUE HERE: continue using the aliases
-        element[aliases.V] = captures
-        element[aliases.apply_stencil] = apply
-        return element
+        local env
+        if type(element) == "table" then
+            assert(not element[aliases.aux], "Key '" .. aliases.aux 
+                    .. "' clashes with alias given to auxiliary functions \"namespace\". Use aliases in constructor to override given names.")
+            assert(not element[aliases.V], "Key '" .. aliases.V 
+                    .. "' clashes with alias given to pattern-captured variables. Use aliases in constructor to override given names.")
+            assert(not element[aliases.apply_stencil], "Key '" .. aliases.apply_stencil
+                    .. "' clashes with alias used for recursive stencil calls. Use aliases in constructor to override given names.")
+            env = element
+        else
+            env = {}
+        end
+--        env.self = element   -- TODO: FIXME: liluat stack-overflows with this
+        env[aliases.aux] = aux
+        env[aliases.V] = captures
+        env[aliases.apply_stencil] = apply
+        return env
 	end
 
     local function normalize_rule(r)
