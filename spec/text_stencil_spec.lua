@@ -20,7 +20,7 @@ describe("text_stencil", function()
         local doc = { a = 1 }
         assert.is.error(function() stencil.apply(doc) end)
     end)
-    pending("applies simple template with non-table matched element and access self", function()
+    it("applies simple template with non-table matched element and access self", function()
         -- TODO: submit a fix to liluat or use another template engine
         local stencil = require("text_stencil")(aux)
         stencil.rule{

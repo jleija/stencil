@@ -34,7 +34,7 @@ local function new_stencil(aux, aliases)
         else
             env = {}
         end
---        env.self = element   -- TODO: FIXME: liluat stack-overflows with this
+        env.self = element   -- TODO: FIXME: liluat stack-overflows with this
         env[aliases.aux] = aux
         env[aliases.V] = captures
         env[aliases.apply_stencil] = apply
