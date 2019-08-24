@@ -1,30 +1,10 @@
-local mm = require'mm'
 local m = require("match")
 
 describe("stencil", function()
     before_each(function()
-        stencil = require("stencil")()
+        stencil = require("table_stencil")()
     end)
 
-    it("how to compare quotes", function()  -- {{{
-        local x = quote print("hello") end
-        local y = quote print("hello") end
-        x.tree.offset = nil
-        y.tree.offset = nil
-        x.tree.statements[1].offset = nil
-        y.tree.statements[1].offset = nil
-        x.tree.statements[1].linenumber = nil
-        y.tree.statements[1].linenumber = nil
-        x.tree.statements[1].value.offset = nil
-        y.tree.statements[1].value.offset = nil
-        x.tree.statements[1].value.linenumber = nil
-        y.tree.statements[1].value.linenumber = nil
-        x.tree.statements[1].arguments[1].offset = nil
-        y.tree.statements[1].arguments[1].offset = nil
-        x.tree.statements[1].arguments[1].linenumber = nil
-        y.tree.statements[1].arguments[1].linenumber = nil
-        assert.is.same( x.tree.statements[1], y.tree.statements[1])
-    end)    -- }}}
     it("copies input element with empty template", function()
         local templates = {}
         local apply_stencil = stencil.make(templates)
